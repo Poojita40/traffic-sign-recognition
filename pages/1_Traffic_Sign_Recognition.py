@@ -159,39 +159,19 @@ with col_res:
             </div>
             """, unsafe_allow_html=True)
             
-            # Dynamic Bar Chart for Uploaded Image
+            # Dynamic Probability Breakdown
             top_preds = res["top_predictions"]
-            labels = [p["class_name"] for p in top_preds]
-            scores = [p["confidence_pct"] for p in top_preds]
             
-            # Plot dynamic probability distribution chart
-            fig, ax = plt.subplots(figsize=(6, 2.8), facecolor="#111827")
-            ax.set_facecolor("#0F172A")
-            
-            # Highlight top-1 with bright electric blue, rest in subtle cyan/slate
-            bar_colors = ["#3B82F6" if i == 0 else "#0EA5E9" if i == 1 else "#334155" for i in range(len(labels))]
-            y_pos = np.arange(len(labels))
-            
-            bars = ax.barh(y_pos, scores, color=bar_colors, height=0.55, edgecolor=(1.0, 1.0, 1.0, 0.15))
-            ax.set_yticks(y_pos)
-            # Shorten labels for clean display
-            short_labels = [l if len(l) <= 24 else l[:22] + "..." for l in labels]
-            ax.set_yticklabels(short_labels, color="#F8FAFC", fontsize=8.5, fontweight="600")
-            ax.invert_yaxis()  # Top prediction on top
-            ax.set_xlabel("Predicted Probability (%)", color="#94A3B8", fontsize=8)
-            ax.set_xlim(0, max(100, max(scores) + 5))
-            ax.tick_params(colors="#64748B", labelsize=8)
-            ax.grid(True, linestyle="--", alpha=0.15, axis="x", color="#FFFFFF")
-            
-            # Data labels on bars
-            for bar in bars:
-                width = bar.get_width()
-                ax.text(width + 1.5, bar.get_y() + bar.get_height()/2, f"{width:.1f}%", 
-                        va='center', ha='left', color="#94A3B8", fontsize=8, fontweight="bold")
-            
-            plt.tight_layout()
-            st.pyplot(fig)
-            st.caption("Live chart dynamically responds to each newly uploaded image's Softmax output distribution.")
+            st.markdown("<div style='font-size: 0.88rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; margin: 12px 0 8px 0;'>Softmax Probability Breakdown</div>", unsafe_allow_html=True)
+            for p in top_preds:
+                c_name = p['class_name']
+                c_pct = p['confidence_pct']
+                c_frac = max(0.0, min(1.0, float(p['confidence'])))
+                
+                # Highlight top-1 with blue accent, others in clean slate
+                label_color = "#60A5FA" if p['rank'] == 1 else "#F8FAFC"
+                st.markdown(f"<div style='display: flex; justify-content: space-between; font-size: 0.88rem; font-weight: 600; margin-bottom: 3px;'><span style='color: {label_color};'>#{p['rank']} {c_name} (ID {p['class_id']})</span><span style='color: #38BDF8;'>{c_pct:.1f}%</span></div>", unsafe_allow_html=True)
+                st.progress(c_frac)
             
             # Table Breakdown
             df_display = pd.DataFrame([
