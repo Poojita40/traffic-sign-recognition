@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import io
+import base64
 import plotly.graph_objects as go
 from PIL import Image
 from utils.predictor import predict_traffic_sign
@@ -231,12 +232,23 @@ with col_up:
                             st.error(f"Inference error: {err}")
                             st.session_state.prediction_result = None
 
-                # 4. Reliably render the uploaded image using in-memory PIL Image
-                st.image(
-                    img,
-                    caption=f"Active File: {uploaded_file.name}",
-                    use_container_width=True
-                )
+                # 4. Render the uploaded image using base64 Data URL (immune to Streamlit Cloud media endpoint 404s)
+                buf = io.BytesIO()
+                img.save(buf, format="PNG")
+                b64_data = base64.b64encode(buf.getvalue()).decode("utf-8")
+                
+                st.markdown(f"""
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0.85rem 0;">
+                    <div style="background: rgba(15, 23, 42, 0.7); border: 2px solid rgba(59, 130, 246, 0.4); border-radius: 16px; padding: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(59, 130, 246, 0.15); max-width: 100%;">
+                        <img src="data:image/png;base64,{b64_data}" 
+                             style="display: block; max-height: 220px; max-width: 100%; border-radius: 10px; object-fit: contain; margin: 0 auto;" 
+                             alt="{uploaded_file.name}" />
+                    </div>
+                    <div style="margin-top: 8px; font-size: 0.8rem; color: #94A3B8; font-family: 'JetBrains Mono', monospace;">
+                        Active File: <span style="color: #60A5FA; font-weight: 600;">{uploaded_file.name}</span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
                 
                 # 5. Show image metadata chips for analytics depth
                 st.markdown(f"""
